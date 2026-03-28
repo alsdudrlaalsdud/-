@@ -1,5 +1,6 @@
 import streamlit as st
 import math
+import pandas as pd
 
 # 페이지 설정
 st.set_page_config(page_title="우리 집 관리비 예측기", layout="wide")
@@ -40,7 +41,7 @@ def calc_lpg(usage, price):
 # --- 2. 웹 화면 구성 ---
 
 st.title("🏠 우리 집 관리비 실시간 예측 대시보드")
-st.markdown("모든 입력값을 기입하면 이번 달 최종 요금을 예측합니다.")
+st.markdown("모든 입력값을 0인 상태에서 시작합니다. 수치를 기입해 주세요.")
 
 # 사이드바: 설정값 (초기값 모두 0)
 st.sidebar.header("⚙️ 기본 설정")
@@ -93,9 +94,9 @@ st.divider()
 
 # --- 4. 결과 대시보드 (왼쪽: 현재 발생 요금, 오른쪽: 월말 예상 요금) ---
 
-res1, res2 = st.columns(2)
+res_col1, res_col2 = st.columns(2)
 
-with res1:
+with res_col1:
     st.header("💵 현재까지 발생 요금")
     st.metric(label="현재 합계", value=f"{curr_total:,.0f} 원")
     st.write(f"⚡ 전기 현재: {c_elec:,}원")
@@ -103,23 +104,25 @@ with res1:
     st.write(f"🔥 가스 현재: {c_gas:,}원")
     st.caption(f"오늘({today}일)까지 실제 사용량 기준 요금입니다.")
 
-with res2:
+with res_col2:
     st.header("🔮 월말 최종 예상 요금")
-    # delta를 통해 현재보다 얼마나 더 나올지 표시
-    st.metric(label="예상 합계", value=f"{pred_total:,.0f} 원", delta=f"{pred_total - curr_total:,.0f} 원 추가 예정", delta_color="inverse")
+    st.metric(label="예상 합계", value=f"{pred_total:,.0f} 원", 
+              delta=f"{pred_total - curr_total:,.0f} 원 추가 예정", delta_color="inverse")
     st.write(f"⚡ 전기 예상: {p_elec:,}원")
     st.write(f"💧 수도 예상: {p_water:,}원")
     st.write(f"🔥 가스 예상: {p_gas:,}원")
     st.caption(f"현재 추세로 {total_days}일을 채울 경우의 예측치입니다.")
 
-# --- 5. 그래프 시각화 (왼쪽: 현재, 오른쪽: 예상) ---
+# --- 5. 그래프 시각화 (번호를 붙여 강제로 [현재]를 왼쪽, [예상]을 오른쪽 배치) ---
 
 st.subheader("📊 요금 비교 그래프")
-# 데이터 생성 (현재가 첫 번째로 오도록)
-chart_data = {
-    "구분": ["현재까지 발생 요금", "월말 예상 요금"],
+
+# 가나다 순 정렬을 피하기 위해 이름 앞에 숫자를 붙였습니다.
+chart_df = pd.DataFrame({
+    "구분": ["1. 현재까지 발생 요금", "2. 월말 예상 요금"],
     "금액(원)": [curr_total, pred_total]
-}
-st.bar_chart(data=chart_data, x="구분", y="금액(원)", color="#3498db")
+})
+
+st.bar_chart(data=chart_df, x="구분", y="금액(원)", color="#3498db")
 
 st.success("데이터를 입력하면 실시간으로 분석 결과가 업데이트됩니다.")
